@@ -1,0 +1,159 @@
+{
+  "info": {
+    "name": "Tienda de Computadoras API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" }
+  ],
+  "item": [
+    {
+      "name": "GET /api/empresa",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status 200', () => pm.response.to.have.status(200));",
+        "pm.test('Tiene nombre', () => pm.expect(pm.response.json()).to.have.property('nombre'));"
+      ] } }],
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/empresa" }
+    },
+    {
+      "name": "POST /api/proveedores",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status 201', () => pm.response.to.have.status(201));",
+        "const body = pm.response.json();",
+        "pm.test('Devuelve _id y nombre', () => { pm.expect(body).to.have.property('_id'); pm.expect(body.nombre).to.eql('Proveedor Newman'); });",
+        "pm.collectionVariables.set('proveedorId', body._id);"
+      ] } }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{ \"nombre\": \"Proveedor Newman\" }" },
+        "url": "{{baseUrl}}/api/proveedores"
+      }
+    },
+    {
+      "name": "GET /api/proveedores",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status 200', () => pm.response.to.have.status(200));",
+        "pm.test('Es un arreglo con datos', () => { const b = pm.response.json(); pm.expect(b).to.be.an('array'); pm.expect(b.length).to.be.above(0); });"
+      ] } }],
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/proveedores" }
+    },
+    {
+      "name": "GET /api/clientes",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status 200', () => pm.response.to.have.status(200));",
+        "const b = pm.response.json();",
+        "pm.test('Es un arreglo con datos', () => { pm.expect(b).to.be.an('array'); pm.expect(b.length).to.be.above(0); });",
+        "pm.collectionVariables.set('clienteId', b[0]._id);"
+      ] } }],
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/clientes" }
+    },
+    {
+      "name": "POST /api/productos",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status 201', () => pm.response.to.have.status(201));",
+        "const body = pm.response.json();",
+        "pm.test('Devuelve el producto', () => { pm.expect(body.precio).to.eql(100); pm.expect(body.proveedor).to.eql(pm.collectionVariables.get('proveedorId')); });",
+        "pm.collectionVariables.set('productoId', body._id);"
+      ] } }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{ \"nombre\": \"Teclado Newman\", \"precio\": 100, \"marca\": \"Logitech\", \"categoria\": \"Accesorio\", \"proveedor\": \"{{proveedorId}}\" }" },
+        "url": "{{baseUrl}}/api/productos"
+      }
+    },
+    {
+      "name": "POST /api/productos (precio negativo)",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status 400', () => pm.response.to.have.status(400));",
+        "pm.test('Informa el error', () => pm.expect(pm.response.json()).to.have.property('error'));"
+      ] } }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{ \"nombre\": \"Inválido\", \"precio\": -5, \"marca\": \"X\", \"categoria\": \"Accesorio\" }" },
+        "url": "{{baseUrl}}/api/productos"
+      }
+    },
+    {
+      "name": "GET /api/productos",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status 200', () => pm.response.to.have.status(200));",
+        "pm.test('Incluye el producto creado', () => pm.expect(pm.response.json().map(p => p._id)).to.include(pm.collectionVariables.get('productoId')));"
+      ] } }],
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/productos" }
+    },
+    {
+      "name": "GET /api/productos/:id",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status 200', () => pm.response.to.have.status(200));",
+        "pm.test('Nombre correcto', () => pm.expect(pm.response.json().nombre).to.eql('Teclado Newman'));"
+      ] } }],
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/productos/{{productoId}}" }
+    },
+    {
+      "name": "GET /api/productos/:id (inexistente)",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status 404', () => pm.response.to.have.status(404));"
+      ] } }],
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/productos/000000000000000000000000" }
+    },
+    {
+      "name": "POST /api/ventas",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status 201', () => pm.response.to.have.status(201));",
+        "const v = pm.response.json();",
+        "pm.test('Precio y subtotal calculados en el servidor', () => { pm.expect(v.detalles[0].precioUnitario).to.eql(100); pm.expect(v.detalles[0].subtotal).to.eql(300); });",
+        "pm.test('Total ignora el importe enviado', () => pm.expect(v.total).to.eql(300));",
+        "pm.collectionVariables.set('ventaId', v._id);"
+      ] } }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{ \"cliente\": \"{{clienteId}}\", \"total\": 1, \"productos\": [ { \"producto\": \"{{productoId}}\", \"cantidad\": 3 } ] }" },
+        "url": "{{baseUrl}}/api/ventas"
+      }
+    },
+    {
+      "name": "POST /api/ventas (cantidad cero)",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status 400', () => pm.response.to.have.status(400));"
+      ] } }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{ \"productos\": [ { \"producto\": \"{{productoId}}\", \"cantidad\": 0 } ] }" },
+        "url": "{{baseUrl}}/api/ventas"
+      }
+    },
+    {
+      "name": "POST /api/ventas (producto inexistente)",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status 400', () => pm.response.to.have.status(400));"
+      ] } }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{ \"productos\": [ { \"producto\": \"000000000000000000000000\", \"cantidad\": 1 } ] }" },
+        "url": "{{baseUrl}}/api/ventas"
+      }
+    },
+    {
+      "name": "GET /api/ventas",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status 200', () => pm.response.to.have.status(200));",
+        "pm.test('Incluye la venta creada', () => pm.expect(pm.response.json().map(v => v._id)).to.include(pm.collectionVariables.get('ventaId')));"
+      ] } }],
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/ventas" }
+    },
+    {
+      "name": "GET /api/ventas/:id",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status 200', () => pm.response.to.have.status(200));",
+        "pm.test('Total 300', () => pm.expect(pm.response.json().total).to.eql(300));"
+      ] } }],
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/ventas/{{ventaId}}" }
+    }
+  ]
+}

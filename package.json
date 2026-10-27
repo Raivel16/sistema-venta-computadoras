@@ -1,0 +1,24 @@
+{
+  "name": "tienda-computadoras",
+  "version": "1.0.0",
+  "description": "API de venta de computadoras (Node.js, Express y MongoDB)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node seeders/seed.js",
+    "test": "newman run tests/tienda.postman_collection.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Raivel16/sistema-venta-computadoras.git"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mongoose": "^8.5.0"
+  },
+  "devDependencies": {
+    "newman": "^6.2.0"
+  }
+}
