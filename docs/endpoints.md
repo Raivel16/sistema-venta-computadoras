@@ -15,6 +15,7 @@ Errores comunes: `400` datos inválidos / identificador inválido, `404` recurso
 | GET | `/api/empresa` | Consultar la empresa |
 | POST | `/api/empresa` | Registrar o actualizar la empresa |
 | GET | `/api/productos` | Listar productos |
+| GET | `/api/productos/categoria/:tipo` | Listar productos de una categoría |
 | GET | `/api/productos/:id` | Consultar un producto |
 | POST | `/api/productos` | Registrar un producto |
 | GET | `/api/clientes` | Listar clientes |
@@ -24,6 +25,9 @@ Errores comunes: `400` datos inválidos / identificador inválido, `404` recurso
 | GET | `/api/ventas` | Historial de ventas |
 | GET | `/api/ventas/:id` | Consultar una venta |
 | POST | `/api/ventas` | Registrar una venta |
+| GET | `/api/reportes/productos-mas-vendidos` | Reporte: productos más vendidos |
+| GET | `/api/reportes/ventas-por-cliente` | Reporte: compras por cliente |
+| GET | `/api/reportes/ventas-por-categoria` | Reporte: ventas por categoría |
 
 ---
 
@@ -58,6 +62,11 @@ Lista los productos, con el nombre del proveedor poblado.
     "categoria": "Computadora", "proveedor": { "_id": "65f0...0002", "nombre": "Distribuidora Andina" } }
 ]
 ```
+
+### GET `/api/productos/categoria/:tipo`
+Parámetro de ruta: `tipo`, categoría exacta (sin distinguir mayúsculas), p. ej. `Accesorio`. Usa el índice `{ categoria: 1 }`.
+
+- **200**: arreglo de productos de esa categoría (vacío si no hay).
 
 ### GET `/api/productos/:id`
 Parámetro de ruta: `id` del producto.
@@ -183,4 +192,34 @@ db.ventas.aggregate([
   { $unwind: "$detalles" },
   { $group: { _id: "$detalles.producto", unidades: { $sum: "$detalles.cantidad" }, importe: { $sum: "$detalles.subtotal" } } }
 ])
+```
+
+---
+
+## Reportes (Aggregation Pipeline)
+
+Todos aceptan los parámetros de consulta opcionales `desde` y `hasta` (fecha ISO, por ejemplo `2026-10-01`), que filtran por el campo `fecha` de la venta. Una fecha inválida devuelve **400**. El reporte de stock crítico no se incluye porque el sistema no maneja inventario.
+
+### GET `/api/reportes/productos-mas-vendidos?limit=5`
+Etapas: `$match` (fechas) → `$unwind` detalles → `$group` por producto → `$sort` → `$limit` → `$lookup` productos → `$unwind` → `$project`. `limit` por defecto: 5.
+
+- **200**:
+```json
+[ { "unidades": 2, "importe": 440, "producto": "65f0...0033", "nombre": "Memoria RAM 16GB", "categoria": "Componente" } ]
+```
+
+### GET `/api/reportes/ventas-por-cliente`
+Etapas: `$match` (fechas y cliente presente) → `$group` por cliente → `$sort` → `$lookup` clientes → `$unwind` → `$project`.
+
+- **200**:
+```json
+[ { "ventas": 1, "totalComprado": 3291, "cliente": "65f0...0021", "nombre": "Ana Torres" } ]
+```
+
+### GET `/api/reportes/ventas-por-categoria`
+Etapas: `$match` (fechas) → `$unwind` detalles → `$lookup` productos → `$unwind` → `$group` por categoría → `$sort` → `$project`.
+
+- **200**:
+```json
+[ { "unidades": 3, "importe": 741, "categoria": "Accesorio" } ]
 ```

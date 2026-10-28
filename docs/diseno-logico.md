@@ -56,3 +56,26 @@ El campo `precioUnitario` del detalle copia el precio del producto en el momento
 - `detalles` debe tener al menos un elemento.
 - Existencia de proveedor, cliente y productos verificada en los controladores antes de guardar.
 - `subtotal` y `total` los calcula el servidor; los importes enviados por el cliente se ignoran.
+
+## Justificación: embeber vs. referenciar
+
+| Decisión | Razón |
+|---|---|
+| **Embeber** `detalles` en `ventas` | Un detalle no existe sin su venta, se lee siempre con ella y su cantidad es acotada. Una sola escritura atómica y una sola lectura para recuperar la venta. |
+| **Referenciar** `productos` desde `detalles` | Los productos tienen vida propia y su precio cambia. Embeber el producto completo duplicaría datos; se referencia y solo se copia `precioUnitario` (historial). |
+| **Referenciar** `cliente` en `ventas` | Un cliente tiene muchas ventas y se consulta por separado; embeber las ventas en el cliente haría crecer el documento sin límite. |
+| **Referenciar** `proveedor` en `productos` | Un proveedor tiene muchos productos y sus datos no deben repetirse en cada uno. |
+| Copiar `precioUnitario` y `subtotal` | Duplicación intencional: conserva el valor histórico de la venta aunque cambie `productos.precio`. |
+
+Los reportes que cruzan colecciones usan `$lookup` (ver [endpoints](endpoints.md#reportes-aggregation-pipeline)).
+
+## Índices
+
+| Colección | Índice | Para qué |
+|---|---|---|
+| productos | `{ categoria: 1 }` | Buscar productos por categoría (`GET /api/productos/categoria/:tipo`). |
+| productos | `{ proveedor: 1 }` | Productos de un proveedor. |
+| ventas | `{ fecha: -1 }` | Historial y filtros por rango de fechas. |
+| ventas | `{ cliente: 1 }` | Ventas de un cliente. |
+
+No hay índice por código de barras o correo porque esos campos no existen en el modelo (se mantuvo sencillo).

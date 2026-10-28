@@ -9,5 +9,6 @@ const productoSchema = new mongoose.Schema({
 });
 
 productoSchema.index({ proveedor: 1 });
+productoSchema.index({ categoria: 1 });
 
 module.exports = mongoose.model('Producto', productoSchema, 'productos');

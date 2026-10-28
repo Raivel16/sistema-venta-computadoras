@@ -66,3 +66,9 @@ Definidas en los esquemas Mongoose (`required`, `min`, `validate`); detalladas e
 ## Atomicidad de la venta
 
 Venta y detalles se guardan como un solo documento con `Venta.create(...)`, operación atómica sobre ese documento; por eso no se requieren transacciones multi-documento.
+
+## Validadores JSON Schema (MongoDB)
+
+Además de las validaciones de Mongoose, [`database/crear-colecciones.js`](../database/crear-colecciones.js) crea las colecciones con validadores `$jsonSchema` (`bsonType`, `required`, `minimum`, `minItems`) y los índices, para que la propia base rechace documentos inválidos. Se ejecuta con `mongosh`. Los datos de prueba equivalentes con `insertMany()` están en [`database/datos-iniciales.js`](../database/datos-iniciales.js).
+
+Índice adicional: `productos { categoria: 1 }`.

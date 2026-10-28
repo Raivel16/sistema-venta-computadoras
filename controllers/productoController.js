@@ -8,6 +8,16 @@ exports.listar = async (req, res) => {
   } catch (err) { manejarError(res, err); }
 };
 
+// Coincidencia exacta de categoría, sin distinguir mayúsculas (collation usa el índice por categoría).
+exports.listarPorCategoria = async (req, res) => {
+  try {
+    const productos = await Producto.find({ categoria: req.params.tipo })
+      .collation({ locale: 'es', strength: 2 })
+      .populate('proveedor', 'nombre');
+    res.json(productos);
+  } catch (err) { manejarError(res, err); }
+};
+
 exports.obtener = async (req, res) => {
   try {
     const producto = await Producto.findById(req.params.id).populate('proveedor', 'nombre');
